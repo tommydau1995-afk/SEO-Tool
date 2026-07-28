@@ -1,0 +1,75 @@
+name: Build SEO AI Studio V4 Setup
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - main
+      - agent/seo-ai-studio-v4
+    paths:
+      - "app_v4.py"
+      - "seo_v4_core.py"
+      - "seo_v4_checks.py"
+      - "requirements_v4.txt"
+      - "SEO_AI_Studio_V4.spec"
+      - "installer_v4.iss"
+      - "tests/**"
+      - "assets/**"
+      - ".github/workflows/build-v4.yml"
+
+jobs:
+  test-and-build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: requirements_v4.txt
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements_v4.txt
+
+      - name: Verify Python and run tests
+        run: |
+          python -m py_compile app_v4.py seo_v4_core.py seo_v4_checks.py
+          python -m unittest discover -s tests -v
+
+      - name: Build standalone EXE
+        run: pyinstaller --clean --noconfirm SEO_AI_Studio_V4.spec
+
+      - name: Smoke-test packaged executable
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist\SEO_AI_Studio_V4.exe")) {
+            throw "SEO_AI_Studio_V4.exe was not created"
+          }
+          Get-Item "dist\SEO_AI_Studio_V4.exe"
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build Setup.exe
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer_v4.iss
+
+      - name: Create SHA-256
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash "installer_output\SEO_AI_Studio_V4_Setup.exe" -Algorithm SHA256).Hash.ToLower()
+          "$hash  SEO_AI_Studio_V4_Setup.exe" | Out-File "installer_output\SHA256SUMS.txt" -Encoding ascii
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: SEO-AI-Studio-V4-Setup
+          path: |
+            installer_output/SEO_AI_Studio_V4_Setup.exe
+            installer_output/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
