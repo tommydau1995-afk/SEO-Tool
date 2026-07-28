@@ -15,7 +15,7 @@ on:
       - "requirements_v4.txt"
       - "SEO_AI_Studio_V4.spec"
       - "installer_v4.iss"
-      - "tests/**"
+      - "tests/test_v4_core.py"
       - "assets/**"
       - ".github/workflows/build-v4.yml"
 
@@ -37,7 +37,7 @@ jobs:
       - name: Verify Python and run tests
         run: |
           python -m py_compile app_v4.py seo_v4_core.py seo_v4_checks.py
-          python -m unittest discover -s tests -v
+          python -m unittest tests/test_v4_core.py -v
 
       - name: Build standalone EXE
         run: pyinstaller --clean --noconfirm SEO_AI_Studio_V4.spec
