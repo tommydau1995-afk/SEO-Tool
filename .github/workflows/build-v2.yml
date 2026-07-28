@@ -1,0 +1,38 @@
+name: Build SEO AI Studio V2 Setup
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build dependencies
+        run: python -m pip install --upgrade pip pyinstaller==6.11.1
+
+      - name: Build EXE
+        run: pyinstaller --clean --noconfirm SEO_AI_Studio_V2.spec
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build Setup.exe
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: SEO-AI-Studio-V2-Setup
+          path: installer_output/SEO_AI_Studio_V2_Setup.exe
+          if-no-files-found: error
