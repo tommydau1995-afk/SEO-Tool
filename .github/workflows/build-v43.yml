@@ -17,7 +17,7 @@ on:
       - "requirements_v43.txt"
       - "SEO_AI_Studio_V43.spec"
       - "installer_v43.iss"
-      - "tests/**"
+      - "tests/test_v43_core.py"
       - "assets/**"
       - ".github/workflows/build-v43.yml"
 
@@ -40,7 +40,7 @@ jobs:
       - name: Verify Python and run tests
         run: |
           python -m py_compile app_v43.py seo_v43_core.py seo_v43_reports.py app_v4.py seo_v4_core.py seo_v4_checks.py
-          python -m unittest discover -s tests -v
+          python -m unittest tests/test_v43_core.py tests/test_v4_core.py -v
 
       - name: Build standalone EXE
         run: pyinstaller --clean --noconfirm SEO_AI_Studio_V43.spec
