@@ -1,0 +1,40 @@
+name: Build SEO AI Studio V3 Setup
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "app_v3.py"
+      - "requirements_v3.txt"
+      - "SEO_AI_Studio_V3.spec"
+      - "installer_v3.iss"
+      - "assets/**"
+      - ".github/workflows/build-v3.yml"
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements_v3.txt
+      - name: Verify Python
+        run: python -m py_compile app_v3.py
+      - name: Build EXE
+        run: pyinstaller --clean --noconfirm SEO_AI_Studio_V3.spec
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+      - name: Build Setup.exe
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer_v3.iss
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: SEO-AI-Studio-V3-Setup
+          path: installer_output/SEO_AI_Studio_V3_Setup.exe
+          if-no-files-found: error
