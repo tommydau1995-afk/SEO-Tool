@@ -450,6 +450,16 @@ class AuditAndBackupTests(unittest.TestCase):
             ):
                 self.assertIn(token, text)
 
+    def test_v48_packaging_targets_v48_executable(self):
+        root = Path(__file__).resolve().parents[1]
+        installer = (root / "installer_v48.iss").read_text(encoding="utf-8")
+        workflow = (
+            root / ".github" / "workflows" / "build-v48.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn('Source: "dist\\{#MyAppExeName}"', installer)
+        self.assertIn('Get-Item "dist\\SEO_AI_Studio_V48.exe"', workflow)
+        self.assertNotIn('Source: "dist\\SEO_AI_Studio_V47.exe"', installer)
+
 
 if __name__ == "__main__":
     unittest.main()

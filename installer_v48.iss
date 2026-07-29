@@ -29,7 +29,7 @@ RestartApplications=no
 Name: "desktopicon"; Description: "Tạo biểu tượng ngoài Desktop"; Flags: unchecked
 
 [Files]
-Source: "dist\SEO_AI_Studio_V47.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "output\pdf\{#MyGuideName}"; DestDir: "{app}"; Flags: ignoreversion
 
 [InstallDelete]
