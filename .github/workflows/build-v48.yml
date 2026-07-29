@@ -73,7 +73,7 @@ jobs:
             throw "Packaged GUI exited early with code $($process.ExitCode)"
           }
           Stop-Process -Id $process.Id -Force
-          Get-Item "dist\SEO_AI_Studio_V47.exe"
+          Get-Item "dist\SEO_AI_Studio_V48.exe"
 
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
