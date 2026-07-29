@@ -1,0 +1,99 @@
+name: Build SEO AI Studio V4.7 Setup
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - "app_v47.py"
+      - "seo_v47_keywords.py"
+      - "generate_user_guide_v47.py"
+      - "requirements_v47.txt"
+      - "SEO_AI_Studio_V47.spec"
+      - "installer_v47.iss"
+      - "update_manifest_v47.json"
+      - "tests/test_v47_keywords.py"
+      - "assets/**"
+      - ".github/workflows/build-v47.yml"
+
+jobs:
+  test-build-and-document:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: requirements_v47.txt
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements_v47.txt
+
+      - name: Generate and verify detailed guide
+        shell: pwsh
+        run: |
+          python generate_user_guide_v47.py
+          @'
+          from pathlib import Path
+          from pypdf import PdfReader
+          path = Path("output/pdf/Huong_Dan_Chi_Tiet_SEO_AI_Studio_V47.pdf")
+          assert path.exists() and path.stat().st_size > 60000
+          assert path.read_bytes().startswith(b"%PDF")
+          reader = PdfReader(path)
+          assert len(reader.pages) >= 28, len(reader.pages)
+          text = "\n".join((page.extract_text() or "") for page in reader.pages)
+          for token in ("Tìm bộ từ khóa không cần Semrush", "Google Suggest", "Cơ hội 0-100", "Full SEO Audit", "Content Workflow", "CrUX", "WordPress", "Fix Queue"):
+              assert token in text, token
+          '@ | python -
+
+      - name: Verify Python and run all tests
+        run: |
+          python -m py_compile app_v47.py seo_v47_keywords.py generate_user_guide_v47.py
+          python -m unittest tests/test_v47_keywords.py tests/test_v46_core.py tests/test_v44_keywords.py tests/test_v43_core.py tests/test_v4_core.py -v
+
+      - name: Build standalone EXE
+        run: pyinstaller --clean --noconfirm SEO_AI_Studio_V47.spec
+
+      - name: Smoke-test packaged GUI
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist\SEO_AI_Studio_V47.exe")) {
+            throw "SEO_AI_Studio_V47.exe was not created"
+          }
+          $process = Start-Process -FilePath "dist\SEO_AI_Studio_V47.exe" -PassThru
+          Start-Sleep -Seconds 8
+          if ($process.HasExited) {
+            throw "Packaged GUI exited early with code $($process.ExitCode)"
+          }
+          Stop-Process -Id $process.Id -Force
+          Get-Item "dist\SEO_AI_Studio_V47.exe"
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build Setup.exe
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer_v47.iss
+
+      - name: Create SHA-256
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash "installer_output\SEO_AI_Studio_V47_Setup.exe" -Algorithm SHA256).Hash.ToLower()
+          "$hash  SEO_AI_Studio_V47_Setup.exe" | Out-File "installer_output\SHA256SUMS.txt" -Encoding ascii
+
+      - name: Upload installer and detailed guide
+        uses: actions/upload-artifact@v4
+        with:
+          name: SEO-AI-Studio-V47-Setup-and-Detailed-Guide
+          path: |
+            installer_output/SEO_AI_Studio_V47_Setup.exe
+            installer_output/SHA256SUMS.txt
+            output/pdf/Huong_Dan_Chi_Tiet_SEO_AI_Studio_V47.pdf
+          if-no-files-found: error
+          retention-days: 30

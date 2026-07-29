@@ -1,0 +1,5 @@
+{
+  "version": "4.7.0",
+  "download_url": "https://github.com/tommydau1995-afk/SEO-Tool/actions/workflows/build-v47.yml",
+  "notes": "V4.7 bổ sung Keyword Discovery không cần Semrush từ Google Suggest, GSC và Website; tự loại trùng, phân Intent/Cluster, gợi ý Landing Page, chấm điểm Cơ hội, xuất CSV/Excel và chuyển thẳng sang Content Brief."
+}
